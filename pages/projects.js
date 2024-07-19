@@ -1,10 +1,9 @@
 import Layout from "@/components/layout";
-import Head from 'next/head'
+import Head from 'next/head';
 import { TOKEN, DATABASE_ID } from "@/config";
 import ProjectItem from "@/components/projects/project-item";
 
-export default function Projects({projects}){
-
+export default function Projects({ projects }) {
     // console.log(projects);
 
     return (
@@ -17,12 +16,12 @@ export default function Projects({projects}){
                 </Head>
                 <h1 className="text-4xl font-bold sm:text-6xl">
                     Total Projects : 
-                    <span className="pl-4 text-blue-500">{projects.results.length}</span>
+                    <span className="pl-4 text-blue-500">{projects.results?.length || 0}</span>
                 </h1>
 
                 <div className="grid grid-cols-1 gap-8 p-12 m-4 md:grid-cols-2">
-                    {projects.results.map((aProject) => (
-                        <ProjectItem key={aProject.id} data={aProject}/>
+                    {projects.results?.map((aProject) => (
+                        <ProjectItem key={aProject.id} data={aProject} />
                     ))}
                 </div>
             </div>
@@ -48,20 +47,28 @@ export async function getStaticProps() {
             ],
             page_size: 100
         })
-      };
-      
-    const res = await fetch(`https://api.notion.com/v1/databases/${DATABASE_ID}/query`, options)
+    };
+    
+    const res = await fetch(`https://api.notion.com/v1/databases/${DATABASE_ID}/query`, options);
 
-    const projects = await res.json()
+    if (!res.ok) {
+        console.error('Failed to fetch data from Notion API');
+        return {
+            props: { projects: { results: [] } },
+            revalidate: 1,
+        };
+    }
 
-    const projectNames = projects.results.map((aProject) =>(
+    const projects = await res.json();
+
+    const projectNames = projects.results?.map((aProject) => (
         aProject.properties.이름.title[0].plain_text
-    ))
+    )) || [];
 
     // console.log(`projectNames : ${projectNames}`);
 
     return {
-        props: {projects},
+        props: { projects },
         revalidate: 1
-    }
+    };
 }
